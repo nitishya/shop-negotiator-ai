@@ -22,6 +22,8 @@ export const metadata: Metadata = {
   authors: [{ name: "Shop Negotiator AI Team" }],
 };
 
+import AIAssistantPanel from "@/components/features/AIAssistantPanel";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,6 +41,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <AIAssistantPanel />
         </AppProvider>
       </body>
     </html>

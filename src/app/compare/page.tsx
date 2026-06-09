@@ -17,6 +17,7 @@ import {
   ArrowRight,
   TrendingUp
 } from 'lucide-react';
+import ShoppingInsightsPanel from '@/components/features/ShoppingInsightsPanel';
 
 export default function ProductComparisonPage() {
   const { startCall, addToCart } = useApp();
@@ -269,6 +270,8 @@ export default function ProductComparisonPage() {
               </div>
 
             </div>
+
+            <ShoppingInsightsPanel product={selectedProduct} />
 
           </div>
 

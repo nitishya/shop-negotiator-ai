@@ -19,6 +19,10 @@ export interface Product {
   negotiatedPrice?: number;
   negotiationSavings?: number;
   negotiationStatus?: 'idle' | 'scanning' | 'negotiating' | 'completed';
+  rating?: number;
+  aiRecommendationScore?: number;
+  historicalPrices?: number[];
+  bestBuyingTime?: string;
 }
 
 export interface Coupon {
@@ -80,7 +84,11 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     negotiatedPrice: 25500,
     negotiationSavings: 4490,
-    negotiationStatus: 'completed'
+    negotiationStatus: 'completed',
+    rating: 4.8,
+    aiRecommendationScore: 95,
+    historicalPrices: [34990, 32990, 29990, 31990, 29990, 28499],
+    bestBuyingTime: 'Buy Now - Historical Low'
   },
   {
     id: 'macbook-pro-m3',
@@ -122,7 +130,11 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     negotiatedPrice: 148500,
     negotiationSavings: 11400,
-    negotiationStatus: 'completed'
+    negotiationStatus: 'completed',
+    rating: 4.9,
+    aiRecommendationScore: 88,
+    historicalPrices: [169900, 169900, 164900, 159900, 162500, 157900],
+    bestBuyingTime: 'Wait - Expected to drop next week'
   },
   {
     id: 'ipad-air-m2',
@@ -164,7 +176,11 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     negotiatedPrice: 54000,
     negotiationSavings: 5900,
-    negotiationStatus: 'completed'
+    negotiationStatus: 'completed',
+    rating: 4.7,
+    aiRecommendationScore: 92,
+    historicalPrices: [59900, 59900, 59900, 59900, 58900, 58900],
+    bestBuyingTime: 'Buy Now - High Demand'
   },
   {
     id: 'samsung-s24-ultra',
@@ -206,7 +222,11 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     negotiatedPrice: 119000,
     negotiationSavings: 10999,
-    negotiationStatus: 'completed'
+    negotiationStatus: 'completed',
+    rating: 4.8,
+    aiRecommendationScore: 98,
+    historicalPrices: [134999, 134999, 129999, 128999, 128499, 127999],
+    bestBuyingTime: 'Buy Now - Excellent Deal'
   }
 ];
 
