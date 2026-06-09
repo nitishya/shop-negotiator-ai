@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI Shopping Negotiator Agent | Live Voice Deal Negotiation",
   description: "Get real-time automated bargain matching and discount negotiations on Amazon, Flipkart, and Croma using our AI Agent video call simulator.",
-  keywords: ["AI negotiator", "shopping assistant", "price match", "coupon finder", "hackathon"],
+  keywords: ["AI negotiator", "shopping assistant", "price match", "coupon finder", "autonomous retail"],
   authors: [{ name: "Shop Negotiator AI Team" }],
 };
 

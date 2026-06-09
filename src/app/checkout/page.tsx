@@ -41,7 +41,7 @@ export default function CheckoutPage() {
       setCouponSuccess(true);
       setCouponCode('');
     } else {
-      setCouponError('Invalid coupon code. Try NEGOTIATOR15 or HACKATHON20.');
+      setCouponError('Invalid coupon code. Try NEGOTIATOR15 or WELCOME20.');
     }
   };
 

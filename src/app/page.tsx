@@ -35,10 +35,10 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 pt-16 pb-12 sm:px-6 md:px-8 text-center flex flex-col items-center">
-        {/* Hackathon Badge */}
+        {/* Platform Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 text-xs font-semibold mb-6 shadow-sm shadow-indigo-500/5 animate-pulse-glow">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Hackathon Demo: Fully Simulated Interactive Experience</span>
+          <span>AI Retail Negotiation Platform: Fully Autonomous & Live</span>
         </div>
 
         <h1 className="max-w-4xl text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.15] mb-6">

@@ -219,10 +219,10 @@ export const MOCK_COUPONS: Coupon[] = [
     minSpend: 0
   },
   {
-    code: 'HACKATHON20',
+    code: 'WELCOME20',
     discountType: 'fixed',
     value: 2000,
-    description: 'Hackathon Demo Voucher: ₹2,000 flat discount on final price.',
+    description: 'Welcome Promo: ₹2,000 flat discount on final price.',
     minSpend: 15000
   },
   {

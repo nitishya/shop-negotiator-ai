@@ -17,6 +17,7 @@ export default function Navbar() {
     { name: 'Home', href: '/' },
     { name: 'Video Negotiator', href: '/video-call' },
     { name: 'Compare Deals', href: '/compare' },
+    { name: 'About', href: '/about' },
   ];
 
   return (
@@ -37,7 +38,7 @@ export default function Navbar() {
             <span className="font-bold tracking-tight text-white leading-tight flex items-center gap-1.5">
               Shop Negotiator <span className="text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full border border-indigo-500/35 uppercase tracking-wide">Agent</span>
             </span>
-            <span className="text-[10.5px] text-zinc-400 tracking-wide">Hackathon Edition</span>
+            <span className="text-[10.5px] text-zinc-400 tracking-wide">Autonomous Edition</span>
           </div>
         </Link>
 
