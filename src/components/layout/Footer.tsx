@@ -10,13 +10,13 @@ export default function Footer() {
             <Bot className="w-4 h-4 text-indigo-400" />
           </div>
           <p className="text-sm text-zinc-500">
-            © {new Date().getFullYear()} AI Shopping Negotiator Agent. Developed by <a href="/about" className="hover:text-indigo-400 font-medium transition-colors">Nitish</a>.
+            © {new Date().getFullYear()} AI Shopping Negotiator Agent. Developed by <a href="/about" className="hover:text-indigo-400 font-medium transition-colors">Nitish Kumar Yadav &amp; Saurabh Gupta</a>.
           </p>
         </div>
 
         <div className="flex items-center gap-6 text-sm text-zinc-400">
           <a
-            href="https://www.linkedin.com/in/nitishya"
+            href="https://www.linkedin.com/in/nitishyadav866/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-white transition-colors text-zinc-500"
@@ -25,7 +25,7 @@ export default function Footer() {
             <span>LinkedIn</span>
           </a>
           <a
-            href="https://github.com/nitishya/shop-negotiator-ai"
+            href="https://github.com/nitishya/shop-negotiator-ai#"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 hover:text-white transition-colors"
