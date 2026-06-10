@@ -25,3 +25,34 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+
+# External Services Configuration
+external:
+  amazon:
+    base-url: ${AMAZON_API_URL:https://api.amazon.com/sandbox}
+    api-key: ${AMAZON_API_KEY:mock-amazon-key}
+  flipkart:
+    base-url: ${FLIPKART_API_URL:https://api.flipkart.net/sandbox}
+    api-key: ${FLIPKART_API_KEY:mock-flipkart-key}
+  croma:
+    base-url: ${CROMA_API_URL:https://api.croma.com/sandbox}
+    api-key: ${CROMA_API_KEY:mock-croma-key}
+  sarvam:
+    base-url: ${SARVAM_API_URL:https://api.sarvam.ai}
+    api-key: ${SARVAM_API_KEY:mock-sarvam-key}
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      shopping-api:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 5
+  retry:
+    instances:
+      shopping-api:
+        maxAttempts: 3
+        waitDuration: 2000
