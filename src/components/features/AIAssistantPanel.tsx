@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, X, MessageSquare, Send, Sparkles, Search, Mic, MicOff, MonitorUp, Loader2, Activity, CheckCircle2, MonitorPlay } from 'lucide-react';
 import ProductRecommendationCard from './ProductRecommendationCard';
-import { MOCK_PRODUCTS } from '@/data/mockData';
+import { Product } from '@/data/mockData';
 
 type ScreenShareState = 'idle' | 'waiting_permission' | 'active' | 'analyzing' | 'product_detected' | 'searching_platforms' | 'ready';
 
@@ -12,7 +12,7 @@ type Message = {
   text: string;
   sender: 'ai' | 'user' | 'tool';
   toolLogs?: string[];
-  productIds?: string[];
+  liveProduct?: Product;
 };
 
 export default function AIAssistantPanel() {
@@ -56,9 +56,11 @@ export default function AIAssistantPanel() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSendMessage = (textOverride?: string) => {
+  const handleSendMessage = async (textOverride?: string) => {
     const textToSubmit = textOverride || inputValue;
     if (!textToSubmit.trim()) return;
+
+    const queryTerm = textToSubmit.split(' ').pop() || 'laptop'; // simple keyword extraction
 
     const newUserMsg: Message = { id: Date.now(), text: textToSubmit, sender: 'user' };
     setMessages(prev => [...prev, newUserMsg]);
@@ -66,31 +68,65 @@ export default function AIAssistantPanel() {
     setTranscriptPreview(null);
     setIsTyping(true);
 
-    // Simulate Tool Execution then AI response
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: '',
-          sender: 'tool',
-          toolLogs: ['🔍 Searching Web for best prices...', '💰 Comparing deals on Amazon and Flipkart...', '✅ Formatting recommendations']
+    // Initial tool log
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now() + 1,
+        text: '',
+        sender: 'tool',
+        toolLogs: [`🔍 Searching Web for "${queryTerm}"...`]
+      }
+    ]);
+
+    try {
+      // Fetch Live data!
+      const res = await fetch(`/api/search?q=${encodeURIComponent(queryTerm)}`);
+      const data = await res.json();
+      const product = data.products?.[0];
+
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastToolMsg = newMessages[newMessages.length - 1];
+        if (lastToolMsg.sender === 'tool' && lastToolMsg.toolLogs) {
+          lastToolMsg.toolLogs.push(`💰 Found live pricing for ${product?.name || queryTerm}`);
+          lastToolMsg.toolLogs.push('✅ Formatting recommendations');
         }
-      ]);
-      
+        return newMessages;
+      });
+
       setTimeout(() => {
         setIsTyping(false);
-        setMessages(prev => [
-          ...prev,
-          { 
-            id: Date.now() + 2, 
-            text: 'I found an excellent deal on the Sony WH-1000XM5 headphones based on current market trends. Should we start negotiating?', 
-            sender: 'ai',
-            productIds: ['sony-wh1000xm5']
-          }
-        ]);
-      }, 2000);
-    }, 1000);
+        if (product) {
+          setMessages(prev => [
+            ...prev,
+            { 
+              id: Date.now() + 2, 
+              text: `I found an excellent live deal on the ${product.name} based on current web results. Should we start negotiating?`, 
+              sender: 'ai',
+              liveProduct: product
+            }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { 
+              id: Date.now() + 2, 
+              text: `I couldn't find any live web results for "${queryTerm}". Could you try another product?`, 
+              sender: 'ai' 
+            }
+          ]);
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error(error);
+      setIsTyping(false);
+      setMessages(prev => [
+        ...prev,
+        { id: Date.now() + 2, text: 'Sorry, I encountered an error searching the web.', sender: 'ai' }
+      ]);
+    }
   };
 
   // Screen Sharing Logic
@@ -113,7 +149,7 @@ export default function AIAssistantPanel() {
       // Simulate Sarvam AI processing
       setTimeout(() => {
         setIsProcessingAudio(false);
-        setTranscriptPreview("Can you find a good deal on Sony WH-1000XM5 headphones?");
+        setTranscriptPreview("Can you find a good deal on a MacBook?");
       }, 2000);
     } else {
       setIsRecording(true);
@@ -129,25 +165,25 @@ export default function AIAssistantPanel() {
         aria-label="Open AI Assistant"
       >
         <Bot className="w-6 h-6" />
-        <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-zinc-950 rounded-full"></span>
+        <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full"></span>
       </button>
 
       {/* Chat Panel */}
       <div 
-        className={`fixed bottom-6 right-6 w-[350px] sm:w-[420px] h-[600px] max-h-[85vh] glass-panel bg-zinc-950/90 border border-brand-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 transition-all duration-300 transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-75 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-6 right-6 w-[350px] sm:w-[420px] h-[600px] max-h-[85vh] glass-panel bg-white/95 border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 transition-all duration-300 transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-75 opacity-0 pointer-events-none'}`}
       >
         {/* Header */}
-        <div className="px-4 py-3 border-b border-brand-border bg-zinc-900/50 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-600">
                 <Bot className="w-4 h-4" />
               </div>
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border border-zinc-900 rounded-full animate-pulse"></span>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full animate-pulse"></span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white leading-tight">DealGenie AI</h3>
-              <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+              <h3 className="text-sm font-bold text-slate-900 leading-tight">DealGenie AI</h3>
+              <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5" /> Ready to assist
               </p>
             </div>
@@ -156,14 +192,14 @@ export default function AIAssistantPanel() {
           <div className="flex items-center gap-1">
             <button
               onClick={screenShareState === 'idle' ? handleStartScreenShare : () => setScreenShareState('idle')}
-              className={`p-1.5 rounded-md transition-colors flex items-center gap-1 text-xs font-medium ${screenShareState !== 'idle' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'hover:bg-zinc-800 text-zinc-400 hover:text-white'}`}
+              className={`p-1.5 rounded-md transition-colors flex items-center gap-1 text-xs font-medium ${screenShareState !== 'idle' ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200' : 'hover:bg-slate-200 text-slate-500 hover:text-slate-900'}`}
               title="Share Screen for AI Context"
             >
               {screenShareState === 'idle' ? <MonitorUp className="w-4 h-4" /> : <MonitorPlay className="w-4 h-4" />}
             </button>
             <button 
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors ml-1"
+              className="p-1.5 rounded-md hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors ml-1"
             >
               <X className="w-5 h-5" />
             </button>
@@ -171,46 +207,44 @@ export default function AIAssistantPanel() {
         </div>
 
         {/* Search Box */}
-        <div className="p-3 border-b border-zinc-800/50 bg-zinc-900/30 relative" ref={searchRef}>
+        <div className="p-3 border-b border-slate-200 bg-slate-50 relative" ref={searchRef}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSearchDropdown(true)}
-              placeholder="Search products..."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              placeholder="Search chat history or commands..."
+              className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 transition-colors"
             />
           </div>
           {showSearchDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-1 mx-3 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl z-20 overflow-hidden">
-              <div className="p-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Recent Searches</div>
-              <button className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors">Sony WH-1000XM5</button>
-              <button className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors">MacBook Pro M3</button>
-              <div className="p-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-t border-zinc-800 mt-1">Suggestions</div>
-              <button className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors flex items-center gap-2"><Sparkles className="w-3 h-3 text-indigo-400"/> Best gaming laptops under $1000</button>
+            <div className="absolute top-full left-0 right-0 mt-1 mx-3 bg-white border border-slate-200 rounded-lg shadow-xl z-20 overflow-hidden">
+              <div className="p-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Suggested Actions</div>
+              <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-2"><Sparkles className="w-3 h-3 text-indigo-500"/> Find cheap laptops</button>
+              <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-2"><Sparkles className="w-3 h-3 text-indigo-500"/> Track Sony headphones price</button>
             </div>
           )}
         </div>
 
         {/* Screen Share Live Preview Panel */}
         {screenShareState !== 'idle' && (
-          <div className="mx-4 mt-4 p-3 bg-zinc-900/80 border border-emerald-500/30 rounded-xl flex items-center justify-between">
+          <div className="mx-4 mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+              <div className="w-10 h-10 rounded-lg bg-white border border-emerald-100 flex items-center justify-center overflow-hidden relative shadow-sm">
                 {screenShareState === 'waiting_permission' ? (
-                  <Loader2 className="w-5 h-5 text-zinc-500 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
                 ) : (
                   <>
                     <MonitorPlay className="w-5 h-5 text-emerald-500" />
-                    <div className="absolute inset-0 bg-emerald-500/10 animate-pulse"></div>
+                    <div className="absolute inset-0 bg-emerald-100 animate-pulse"></div>
                   </>
                 )}
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-white">Live Screen Analysis</span>
-                <span className="text-[10px] text-zinc-400">
+                <span className="text-xs font-bold text-slate-900">Live Screen Analysis</span>
+                <span className="text-[10px] text-slate-500">
                   {screenShareState === 'waiting_permission' && 'Waiting for browser permission...'}
                   {screenShareState === 'active' && 'Screen sharing active. Ready.'}
                   {screenShareState === 'analyzing' && 'Analyzing page content...'}
@@ -230,19 +264,19 @@ export default function AIAssistantPanel() {
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-zinc-900/20">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.sender === 'tool' ? (
-                <div className="w-full max-w-[85%] bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-400 font-mono">
-                  <div className="flex items-center gap-1.5 mb-2 text-zinc-300 font-semibold">
-                    <Activity className="w-3.5 h-3.5" />
+                <div className="w-full max-w-[85%] bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 font-mono shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-2 text-slate-700 font-semibold">
+                    <Activity className="w-3.5 h-3.5 text-indigo-500" />
                     Tool Execution
                   </div>
                   <div className="space-y-1.5">
                     {msg.toolLogs?.map((log, i) => (
                       <div key={i} className="flex items-start gap-2">
-                        <span className="text-indigo-400 mt-0.5">{'>'}</span>
+                        <span className="text-indigo-500 mt-0.5">{'>'}</span>
                         <span>{log}</span>
                       </div>
                     ))}
@@ -253,22 +287,15 @@ export default function AIAssistantPanel() {
                   <div 
                     className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       msg.sender === 'user' 
-                        ? 'bg-indigo-600 text-white rounded-br-sm' 
-                        : 'bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-bl-sm shadow-sm'
+                        ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' 
+                        : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'
                     }`}
                   >
                     {msg.text}
                   </div>
-                  {msg.productIds && msg.productIds.length > 0 && (
-                    <div className="mt-1 w-full flex flex-col gap-2">
-                      {msg.productIds.map(id => {
-                        const product = MOCK_PRODUCTS.find(p => p.id === id);
-                        return product ? (
-                          <div key={id} className="w-[280px]">
-                            <ProductRecommendationCard product={product} />
-                          </div>
-                        ) : null;
-                      })}
+                  {msg.liveProduct && (
+                    <div className="mt-1 w-[280px]">
+                      <ProductRecommendationCard product={msg.liveProduct} />
                     </div>
                   )}
                 </div>
@@ -279,10 +306,10 @@ export default function AIAssistantPanel() {
           {/* Typing Indicator */}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-zinc-800 border border-zinc-700 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 w-16 shadow-sm">
-                <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 w-16 shadow-sm">
+                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
               </div>
             </div>
           )}
@@ -290,42 +317,42 @@ export default function AIAssistantPanel() {
         </div>
 
         {/* Input Area */}
-        <div className="p-3 bg-zinc-900/80 border-t border-brand-border">
+        <div className="p-3 bg-white border-t border-slate-200">
           {isRecording ? (
-            <div className="flex items-center justify-between bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between bg-red-50 border border-red-100 rounded-xl px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                 </div>
-                <span className="text-sm font-medium text-red-400">Listening...</span>
+                <span className="text-sm font-medium text-red-500">Listening...</span>
               </div>
-              <button onClick={handleToggleRecording} className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
+              <button onClick={handleToggleRecording} className="p-1.5 rounded-lg bg-red-100 text-red-500 hover:bg-red-200 transition-colors">
                 <MicOff className="w-4 h-4" />
               </button>
             </div>
           ) : isProcessingAudio ? (
-            <div className="flex items-center justify-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3">
-              <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
-              <span className="text-sm font-medium text-indigo-400">Processing with Sarvam AI...</span>
+            <div className="flex items-center justify-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+              <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+              <span className="text-sm font-medium text-indigo-600">Processing with Sarvam AI...</span>
             </div>
           ) : transcriptPreview !== null ? (
-            <div className="bg-zinc-950 border border-indigo-500/50 rounded-xl p-3 flex flex-col gap-2">
+            <div className="bg-white border border-indigo-200 rounded-xl p-3 flex flex-col gap-2 shadow-sm">
               <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Review Transcript</span>
-                <button onClick={() => setTranscriptPreview(null)} className="text-zinc-500 hover:text-zinc-300">
+                <span className="text-xs font-semibold text-indigo-500 uppercase tracking-wider">Review Transcript</span>
+                <button onClick={() => setTranscriptPreview(null)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
               <textarea
                 value={transcriptPreview}
                 onChange={(e) => setTranscriptPreview(e.target.value)}
-                className="w-full bg-transparent text-sm text-white resize-none focus:outline-none px-1"
+                className="w-full bg-slate-50 rounded-lg text-sm text-slate-700 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-300 p-2 border border-slate-200"
                 rows={2}
               />
               <div className="flex justify-end gap-2 mt-1">
-                <button onClick={() => setTranscriptPreview(null)} className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors">Cancel</button>
-                <button onClick={() => handleSendMessage(transcriptPreview)} className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center gap-1.5">
+                <button onClick={() => setTranscriptPreview(null)} className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors">Cancel</button>
+                <button onClick={() => handleSendMessage(transcriptPreview)} className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
                   <Send className="w-3 h-3" /> Send
                 </button>
               </div>
@@ -339,13 +366,13 @@ export default function AIAssistantPanel() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about deals or trends..."
-                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-zinc-600"
+                placeholder="Ask about live deals..."
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors placeholder:text-slate-400 shadow-sm"
               />
               <button
                 type="button"
                 onClick={handleToggleRecording}
-                className="p-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors flex-shrink-0"
+                className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0 border border-slate-200"
                 title="Voice Input (Sarvam AI)"
               >
                 <Mic className="w-4 h-4" />
@@ -353,7 +380,7 @@ export default function AIAssistantPanel() {
               <button
                 type="submit"
                 disabled={!inputValue.trim() || isTyping}
-                className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white transition-colors flex-shrink-0"
+                className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-400 text-white transition-colors flex-shrink-0 shadow-sm"
               >
                 <Send className="w-4 h-4" />
               </button>

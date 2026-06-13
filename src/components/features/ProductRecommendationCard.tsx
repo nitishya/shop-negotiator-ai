@@ -34,14 +34,14 @@ export default function ProductRecommendationCard({ product }: ProductRecommenda
   };
 
   return (
-    <div className="glass-panel rounded-2xl border border-brand-border overflow-hidden flex flex-col group shadow-lg transition-transform hover:-translate-y-1">
+    <div className="glass-panel rounded-2xl border border-slate-200 overflow-hidden flex flex-col group shadow-lg transition-transform hover:-translate-y-1 bg-white">
       {/* Product Image */}
-      <div className="relative h-48 w-full bg-zinc-900 overflow-hidden">
+      <div className="relative h-48 w-full bg-slate-50 overflow-hidden p-2 flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+          className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500 rounded-xl"
         />
         
         {/* AI Score Badge */}
@@ -55,29 +55,29 @@ export default function ProductRecommendationCard({ product }: ProductRecommenda
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center gap-1 mb-2">
           <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-          <span className="text-xs font-bold text-zinc-300">{rating.toFixed(1)}</span>
+          <span className="text-xs font-bold text-slate-600">{rating.toFixed(1)}</span>
         </div>
 
-        <h3 className="font-bold text-white text-base leading-snug mb-1 group-hover:text-indigo-400 transition-colors line-clamp-1">
+        <h3 className="font-bold text-slate-900 text-base leading-snug mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">
           {product.name}
         </h3>
-        <p className="text-xs text-zinc-400 line-clamp-2 mb-4 leading-relaxed flex-grow">
+        <p className="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed flex-grow">
           {product.description}
         </p>
 
         {/* Pricing Breakdown */}
-        <div className="space-y-2 mb-5 pt-3 border-t border-zinc-900">
+        <div className="space-y-2 mb-5 pt-3 border-t border-slate-100">
           <div className="flex flex-col">
-            <span className="text-xs text-zinc-500">Best Store Price</span>
+            <span className="text-xs text-slate-500">Best Store Price</span>
             <div className="flex items-end gap-2">
-              <span className="text-lg font-bold text-white">₹{bestOnlinePrice.toLocaleString()}</span>
-              <span className="text-xs text-zinc-500 line-through mb-1">₹{originalPrice.toLocaleString()}</span>
+              <span className="text-lg font-bold text-slate-900">₹{bestOnlinePrice.toLocaleString()}</span>
+              <span className="text-xs text-slate-400 line-through mb-1">₹{originalPrice.toLocaleString()}</span>
             </div>
           </div>
           
-          <div className="flex items-center justify-between text-sm bg-indigo-500/10 border border-indigo-500/20 p-2 rounded-lg">
-            <span className="font-semibold text-indigo-400 text-xs">Expected AI Price:</span>
-            <span className="font-extrabold text-indigo-400">
+          <div className="flex items-center justify-between text-sm bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
+            <span className="font-semibold text-indigo-600 text-xs">Expected AI Price:</span>
+            <span className="font-extrabold text-indigo-600">
               ₹{product.negotiatedPrice?.toLocaleString() || '---'}
             </span>
           </div>
