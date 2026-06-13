@@ -67,6 +67,22 @@ export default function AIAssistantPanel() {
     setTranscriptPreview(null);
     setIsTyping(true);
 
+    const lowerText = textToSubmit.toLowerCase().trim();
+    if (['hi', 'hello', 'hey', 'start'].includes(lowerText)) {
+      setTimeout(() => {
+        setIsTyping(false);
+        setMessages(prev => [
+          ...prev,
+          { 
+            id: Date.now() + 2, 
+            text: `Hello! What would you like to shop for today? Here are some popular items you might be interested in:\n\n- **Smartphones** (e.g. iPhone, Samsung)\n- **Laptops** (e.g. MacBook Pro)\n- **Headphones** (e.g. Sony WH-1000XM5)\n\nJust type the product you are looking for, and I'll find the best deals!`, 
+            sender: 'ai' 
+          }
+        ]);
+      }, 1000);
+      return;
+    }
+
     try {
       // Simulate slight network delay for realism
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -249,7 +265,7 @@ export default function AIAssistantPanel() {
             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex flex-col gap-2 max-w-[85%]">
                 <div 
-                  className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                     msg.sender === 'user' 
                       ? 'bg-indigo-600 text-white rounded-br-sm shadow-sm' 
                       : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'

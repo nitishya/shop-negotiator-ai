@@ -83,14 +83,23 @@ export default function ProductRecommendationCard({ product }: ProductRecommenda
           </div>
         </div>
 
-        {/* Action Trigger */}
-        <button
-          onClick={handleStartNegotiation}
-          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold text-sm transition-opacity hover:opacity-95 shadow-md shadow-indigo-600/20 active:scale-95"
-        >
-          <PhoneCall className="w-4 h-4 text-indigo-200" />
-          <span>Call AI to Negotiate</span>
-        </button>
+        {/* Action Triggers */}
+        <div className="flex flex-col gap-2 mt-auto">
+          <button
+            onClick={() => router.push(`/compare?q=${encodeURIComponent(product.name.split(' (')[0])}`)}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm transition-colors hover:bg-slate-100 hover:text-indigo-600 active:scale-95"
+          >
+            <span>Compare Prices</span>
+          </button>
+          
+          <button
+            onClick={handleStartNegotiation}
+            className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm transition-opacity hover:opacity-95 shadow-sm shadow-indigo-600/20 active:scale-95"
+          >
+            <PhoneCall className="w-4 h-4 text-indigo-200" />
+            <span>Call AI to Negotiate</span>
+          </button>
+        </div>
       </div>
     </div>
   );
