@@ -32,9 +32,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-zinc-950 text-zinc-100 flex flex-col selection:bg-indigo-500/30 selection:text-white">
+      <body className="min-h-full bg-slate-50 text-slate-900 flex flex-col selection:bg-indigo-500/30 selection:text-indigo-900">
         <AppProvider>
           <Navbar />
           <main className="flex-grow flex flex-col w-full">

@@ -1,8 +1,6 @@
-'use client';
-
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
 import { Product } from '@/data/mockData';
 import { Bot, ShoppingCart, Video, Sparkles, Menu, X, ArrowRight, Search, Mic, MicOff, Loader2 } from 'lucide-react';
@@ -10,6 +8,7 @@ import Image from 'next/image';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { cart, startCall } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -72,12 +71,21 @@ export default function Navbar() {
       // Simulate Sarvam AI processing
       setTimeout(() => {
         setIsProcessingAudio(false);
-        setSearchQuery("Laptop");
+        const transcript = 'Laptop';
+        setSearchQuery(transcript);
         setIsSearchFocused(true);
       }, 1500);
     } else {
       setIsRecording(true);
       setIsSearchFocused(true);
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setIsSearchFocused(false);
+      router.push(`/compare?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -105,7 +113,7 @@ export default function Navbar() {
 
         {/* Global Search Bar */}
         <div className="flex-1 max-w-xl mx-auto relative hidden md:block" ref={searchContainerRef}>
-          <div className="relative flex items-center">
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <Search className="absolute left-3 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -113,18 +121,26 @@ export default function Navbar() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               placeholder="Live web search for products..."
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-9 pr-12 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder:text-slate-400"
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-9 pr-20 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder:text-slate-400"
             />
-            <button
-              onClick={handleToggleRecording}
-              className={`absolute right-2 p-1.5 rounded-lg transition-colors ${
-                isRecording ? 'bg-red-100 text-red-500' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'
-              }`}
-              title="Search by Voice (Sarvam AI)"
-            >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
-          </div>
+            <div className="absolute right-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleToggleRecording}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  isRecording ? 'bg-red-100 text-red-500' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'
+                }`}
+                title="Search by Voice (Sarvam AI)"
+              >
+                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+              {searchQuery && (
+                <button type="submit" className="p-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
+                  <Search className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </form>
 
           {/* Search Dropdown */}
           {isSearchFocused && (
@@ -160,8 +176,11 @@ export default function Navbar() {
                     {liveSearchResults.map(product => (
                       <Link
                         key={product.id}
-                        href="/compare"
-                        onClick={() => setIsSearchFocused(false)}
+                        href={`/compare?q=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => {
+                          setIsSearchFocused(false);
+                          setSearchQuery('');
+                        }}
                         className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
                       >
                         <div className="w-10 h-10 rounded-lg bg-slate-100 p-1 shrink-0 flex items-center justify-center">
