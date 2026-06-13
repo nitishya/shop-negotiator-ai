@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { MOCK_PRODUCTS, NEGOTIATION_SCRIPT, Product } from '@/data/mockData';
 import { 
-  Video, 
-  VideoOff, 
   Mic, 
   MicOff, 
   PhoneOff, 
@@ -15,16 +14,17 @@ import {
   ArrowRight, 
   Sparkles, 
   CheckCircle, 
-  DollarSign, 
   TrendingDown, 
   MessageSquare,
   RefreshCw,
   ShoppingBag,
   Info,
-  Bot
+  Bot,
+  Activity
 } from 'lucide-react';
 
-export default function VideoCallPage() {
+export default function VoiceNegotiatorPage() {
+  const router = useRouter();
   const {
     negotiationStep,
     negotiationActive,
@@ -39,17 +39,79 @@ export default function VideoCallPage() {
     lockDeal
   } = useApp();
 
-  const [micActive, setMicActive] = useState(true);
-  const [videoActive, setVideoActive] = useState(true);
+  const [micActive, setMicActive] = useState(false);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   const activeProduct = MOCK_PRODUCTS.find(p => p.id === selectedProductId) || MOCK_PRODUCTS[0];
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [negotiationStep]);
+  }, [negotiationStep, transcript]);
+
+  // Setup Web Speech API
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+
+        recognitionRef.current.onresult = (event: any) => {
+          let currentTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            currentTranscript += event.results[i][0].transcript;
+          }
+          setTranscript(currentTranscript);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error("Speech recognition error", event.error);
+          setMicActive(false);
+        };
+        
+        recognitionRef.current.onend = () => {
+          setMicActive(false);
+        }
+      }
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const toggleMic = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome or Safari.");
+      setMicActive(!micActive); // fallback visual toggle
+      return;
+    }
+    
+    if (micActive) {
+      recognitionRef.current.stop();
+      setMicActive(false);
+    } else {
+      setTranscript(''); // clear old transcript on fresh start
+      recognitionRef.current.start();
+      setMicActive(true);
+    }
+  };
+
+  const handleEndCall = () => {
+    endCall();
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    router.push('/');
+  };
 
   useEffect(() => {
     if (isAutoPlay && isCallConnected && negotiationStep < NEGOTIATION_SCRIPT.length) {
@@ -104,10 +166,10 @@ export default function VideoCallPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-indigo-600 animate-ping"></span>
-              <span className="text-xs uppercase font-bold text-indigo-600 tracking-wider">Live Bargain Room</span>
+              <span className="text-xs uppercase font-bold text-indigo-600 tracking-wider">Live Voice Bargain Room</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-              Negotiation Session: <span className="text-indigo-600">{activeProduct.name}</span>
+              Voice Negotiator: <span className="text-indigo-600">{activeProduct.name}</span>
             </h1>
           </div>
 
@@ -128,145 +190,110 @@ export default function VideoCallPage() {
         {/* Core Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* LEFT 2 COLUMNS: Video Streams */}
+          {/* LEFT 2 COLUMNS: Audio Streams */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             
-            {/* Video Streams Container */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-[350px] sm:h-[400px]">
+            {/* Audio Streams Container */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-[300px]">
               
-              {/* FEED 1: AI Agent */}
+              {/* FEED 1: AI Agent Audio */}
               <div className="relative rounded-2xl overflow-hidden bg-white border border-slate-200 flex flex-col items-center justify-center shadow-sm group">
-                <div className={`absolute w-36 h-36 rounded-full bg-indigo-100 blur-xl transition-all duration-1000 ${
+                <div className={`absolute w-48 h-48 rounded-full bg-indigo-100 blur-2xl transition-all duration-1000 ${
                   isCallConnected && currentStepData?.speaker === 'agent' ? 'scale-125 bg-purple-100' : 'scale-100'
                 }`} />
                 
-                <div className="relative flex items-center justify-center">
-                  <div className={`w-24 h-24 rounded-full bg-slate-50 border flex items-center justify-center transition-all duration-300 ${
+                <div className="relative flex items-center justify-center z-10">
+                  <div className={`w-28 h-28 rounded-full bg-slate-50 border flex items-center justify-center transition-all duration-300 ${
                     isCallConnected && currentStepData?.speaker === 'agent' 
                       ? 'border-indigo-400 ring-4 ring-indigo-100 scale-105' 
                       : 'border-slate-200'
                   }`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <div className="relative w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-indigo-50">
-                      <Sparkles className="w-10 h-10 text-indigo-500 animate-float" />
+                    <div className="relative w-24 h-24 rounded-full overflow-hidden flex items-center justify-center bg-indigo-50">
+                      <Sparkles className="w-12 h-12 text-indigo-500 animate-float" />
                     </div>
                   </div>
                   
                   {isCallConnected && currentStepData?.speaker === 'agent' && (
-                    <span className="absolute -inset-1 rounded-full border border-indigo-400 animate-pulse opacity-75"></span>
+                    <span className="absolute -inset-2 rounded-full border border-indigo-400 animate-ping opacity-50"></span>
                   )}
                 </div>
 
-                <div className="mt-4 text-center z-10">
-                  <h3 className="font-bold text-slate-900 text-sm">Negotiator Agent (Voice AI)</h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                <div className="mt-6 text-center z-10">
+                  <h3 className="font-bold text-slate-900 text-base">Negotiator Agent</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-1">
                     {!isCallConnected ? 'Connecting server line...' : (currentStepData?.speaker === 'agent' ? 'Speaking...' : 'Listening...')}
                   </p>
                 </div>
 
                 {isCallConnected && currentStepData?.speaker === 'agent' && (
-                  <div className="absolute bottom-4 flex items-end gap-1 h-6">
-                    <span className="wave-bar w-1 bg-indigo-500 rounded-full h-3 animate-soundwave"></span>
-                    <span className="wave-bar w-1 bg-indigo-400 rounded-full h-5 animate-soundwave"></span>
-                    <span className="wave-bar w-1 bg-purple-500 rounded-full h-4 animate-soundwave"></span>
-                    <span className="wave-bar w-1 bg-indigo-500 rounded-full h-6 animate-soundwave"></span>
-                    <span className="wave-bar w-1 bg-purple-400 rounded-full h-3 animate-soundwave"></span>
+                  <div className="absolute bottom-6 flex items-end gap-1.5 h-8">
+                    <span className="wave-bar w-1.5 bg-indigo-500 rounded-full h-4 animate-soundwave"></span>
+                    <span className="wave-bar w-1.5 bg-indigo-400 rounded-full h-8 animate-soundwave"></span>
+                    <span className="wave-bar w-1.5 bg-purple-500 rounded-full h-5 animate-soundwave"></span>
+                    <span className="wave-bar w-1.5 bg-indigo-500 rounded-full h-7 animate-soundwave"></span>
+                    <span className="wave-bar w-1.5 bg-purple-400 rounded-full h-3 animate-soundwave"></span>
                   </div>
                 )}
-
-                <div className="absolute top-4 left-4 bg-white/90 px-2 py-0.5 rounded text-[10px] uppercase font-extrabold text-indigo-600 border border-indigo-100 tracking-wider shadow-sm">
-                  Agent Feed
-                </div>
               </div>
 
-              {/* FEED 2: User */}
-              <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex flex-col items-center justify-center shadow-sm group">
-                {videoActive ? (
-                  <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 to-slate-800 flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-slate-700/80 border border-slate-600 flex items-center justify-center mb-3 text-slate-300">
-                      User
+              {/* FEED 2: User Mic Feed */}
+              <div className="relative rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col items-center justify-center shadow-sm group">
+                <div className="flex flex-col items-center justify-center z-10">
+                  <button
+                    onClick={toggleMic}
+                    className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${
+                      micActive 
+                        ? 'bg-red-50 text-red-500 border-2 border-red-200 ring-4 ring-red-100 scale-105' 
+                        : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {micActive ? <Mic className="w-10 h-10 animate-pulse" /> : <MicOff className="w-10 h-10" />}
+                  </button>
+                  <span className={`mt-4 font-semibold text-sm ${micActive ? 'text-red-500' : 'text-slate-500'}`}>
+                    {micActive ? 'Your Mic is Live' : 'Mic is Muted'}
+                  </span>
+                  
+                  {micActive && (
+                    <div className="absolute bottom-6 flex items-end gap-1.5 h-6">
+                      <span className="wave-bar w-1 bg-red-400 rounded-full h-3 animate-soundwave"></span>
+                      <span className="wave-bar w-1 bg-red-500 rounded-full h-6 animate-soundwave"></span>
+                      <span className="wave-bar w-1 bg-red-400 rounded-full h-4 animate-soundwave"></span>
                     </div>
-                    <span className="text-xs text-slate-400 font-medium">Your camera is streaming (Mock)</span>
-                    <div className="absolute bottom-4 flex items-end gap-1 h-6">
-                      {micActive && isCallConnected && currentStepData?.speaker === 'user' ? (
-                        <>
-                          <span className="wave-bar w-1 bg-slate-400 rounded-full h-2 animate-soundwave"></span>
-                          <span className="wave-bar w-1 bg-slate-300 rounded-full h-4 animate-soundwave"></span>
-                          <span className="wave-bar w-1 bg-slate-400 rounded-full h-3 animate-soundwave"></span>
-                        </>
-                      ) : (
-                        <span className="text-[10px] text-slate-500 font-semibold">{micActive ? 'Mic Idle' : 'Muted'}</span>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-slate-500">
-                    <VideoOff className="w-10 h-10 mb-2" />
-                    <span className="text-xs font-semibold">Camera Off</span>
-                  </div>
-                )}
-
-                <div className="absolute top-4 left-4 bg-black/50 px-2 py-0.5 rounded text-[10px] uppercase font-extrabold text-white border border-white/20 tracking-wider backdrop-blur-sm">
-                  You (Customer)
+                  )}
                 </div>
               </div>
 
             </div>
 
-            {/* Video Controls Bar */}
+            {/* Audio Controls Bar */}
             <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setMicActive(!micActive)}
-                  className={`p-3 rounded-xl border transition-all active:scale-95 ${
-                    micActive 
-                      ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600' 
-                      : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-500'
-                  }`}
-                  title={micActive ? 'Mute Mic' : 'Unmute Mic'}
-                >
-                  {micActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                </button>
+                {/* Status and Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={resetNegotiation}
+                    className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-700 transition-colors active:scale-95 flex items-center gap-2"
+                    title="Restart Negotiation"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span className="text-sm font-semibold hidden sm:inline">Restart</span>
+                  </button>
 
-                <button
-                  onClick={() => setVideoActive(!videoActive)}
-                  className={`p-3 rounded-xl border transition-all active:scale-95 ${
-                    videoActive 
-                      ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600' 
-                      : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-500'
-                  }`}
-                  title={videoActive ? 'Turn Camera Off' : 'Turn Camera On'}
-                >
-                  {videoActive ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Status and Action Buttons */}
-              <div className="flex items-center gap-3">
-                {/* Reset button */}
-                <button
-                  onClick={resetNegotiation}
-                  className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-700 transition-colors active:scale-95"
-                  title="Restart Negotiation"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-
-                {/* Call Status Indicator */}
-                <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${
-                  getStatusBadgeColor(currentStepData?.statusLabel || 'Connecting')
-                }`}>
-                  {currentStepData?.statusLabel || 'Connecting...'}
-                </span>
+                  <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${
+                    getStatusBadgeColor(currentStepData?.statusLabel || 'Connecting')
+                  }`}>
+                    {currentStepData?.statusLabel || 'Connecting...'}
+                  </span>
+                </div>
               </div>
 
               <div>
                 <button
-                  onClick={endCall}
+                  onClick={handleEndCall}
                   className="flex items-center gap-2 px-5 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-semibold text-white transition-colors shadow-sm shadow-red-500/20 active:scale-95"
                 >
                   <PhoneOff className="w-4 h-4" />
-                  <span className="hidden sm:inline">End Session</span>
+                  <span className="hidden sm:inline">End Call</span>
                 </button>
               </div>
             </div>
@@ -340,11 +367,6 @@ export default function VideoCallPage() {
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   )}
-                  {negotiationStep < 8 && (
-                    <span className="text-[10.5px] text-slate-500 text-center flex items-center justify-center gap-1">
-                      <Info className="w-3 h-3" /> Lock unlocks when agent finishes negotiation
-                    </span>
-                  )}
                 </div>
 
               </div>
@@ -352,83 +374,80 @@ export default function VideoCallPage() {
 
           </div>
 
-          {/* RIGHT COLUMN: Conversation History & Automation Controls */}
+          {/* RIGHT COLUMN: Conversation History & Transcript */}
           <div className="lg:col-span-1 flex flex-col gap-4">
             
-            {/* Simulation automation card */}
+            {/* Live User Transcript */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
               <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-red-500" /> Live Speech-to-Text
+              </h3>
+              <div className="min-h-[80px] bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700">
+                {transcript ? (
+                  <p className="animate-fade-in">{transcript}</p>
+                ) : (
+                  <p className="text-slate-400 italic text-xs flex items-center justify-center h-full text-center">
+                    Click the microphone button to start converting your voice to text.
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {/* Simulation automation card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                 <Bot className="w-4 h-4 text-indigo-500" /> Script Controller
               </h3>
 
-              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                Step through the AI negotiator's actions. Watch it contact Croma vendor bots and Flipkart B2B APIs to bargain down the price.
-              </p>
+              <div className="flex gap-2">
+                {/* Play / Pause Auto-Play */}
+                <button
+                  onClick={() => setIsAutoPlay(!isAutoPlay)}
+                  disabled={negotiationStep >= NEGOTIATION_SCRIPT.length}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
+                    isAutoPlay 
+                      ? 'bg-purple-500 hover:bg-purple-600 border-purple-600 text-white shadow-sm shadow-purple-500/20'
+                      : negotiationStep >= NEGOTIATION_SCRIPT.length
+                        ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {isAutoPlay ? (
+                    <>
+                      <Pause className="w-3.5 h-3.5" />
+                      <span>Pause</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5 text-purple-500" />
+                      <span>Auto-Play</span>
+                    </>
+                  )}
+                </button>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
-                  {/* Play / Pause Auto-Play */}
-                  <button
-                    onClick={() => setIsAutoPlay(!isAutoPlay)}
-                    disabled={negotiationStep >= NEGOTIATION_SCRIPT.length}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
-                      isAutoPlay 
-                        ? 'bg-purple-500 hover:bg-purple-600 border-purple-600 text-white shadow-sm shadow-purple-500/20'
-                        : negotiationStep >= NEGOTIATION_SCRIPT.length
-                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {isAutoPlay ? (
-                      <>
-                        <Pause className="w-3.5 h-3.5" />
-                        <span>Pause Auto</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3.5 h-3.5 text-purple-500" />
-                        <span>Auto-Play Call</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Manual Step */}
-                  <button
-                    onClick={advanceNegotiation}
-                    disabled={negotiationStep >= NEGOTIATION_SCRIPT.length || isAutoPlay}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
-                      negotiationStep >= NEGOTIATION_SCRIPT.length || isAutoPlay
-                        ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-600/20'
-                    }`}
-                  >
-                    <span>Next Agent Step</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
-                  <span>Progress: {negotiationStep} of {NEGOTIATION_SCRIPT.length} events</span>
-                  <button
-                    onClick={resetNegotiation}
-                    className="hover:text-indigo-600 flex items-center gap-0.5 hover:underline"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Restart Script
-                  </button>
-                </div>
+                {/* Manual Step */}
+                <button
+                  onClick={advanceNegotiation}
+                  disabled={negotiationStep >= NEGOTIATION_SCRIPT.length || isAutoPlay}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                    negotiationStep >= NEGOTIATION_SCRIPT.length || isAutoPlay
+                      ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-600/20'
+                  }`}
+                >
+                  <span>Next Step</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
             {/* Conversation Log window */}
-            <div className="bg-white rounded-2xl border border-slate-200 flex flex-col h-[350px] sm:h-[430px] shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="bg-white rounded-2xl border border-slate-200 flex flex-col flex-1 shadow-sm overflow-hidden min-h-[250px]">
+              <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-indigo-500" />
-                  <h3 className="text-sm font-bold text-slate-900">Live Conversation Log</h3>
+                  <h3 className="text-sm font-bold text-slate-900">Conversation Log</h3>
                 </div>
-                <span className="text-[10px] text-slate-500 font-extrabold tracking-wide uppercase px-2 py-0.5 rounded bg-white border border-slate-200">
-                  Realtime API Transcript
-                </span>
               </div>
 
               {/* Chat Scroll Container */}
@@ -436,7 +455,7 @@ export default function VideoCallPage() {
                 {visibleSteps.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
                     <span className="animate-spin h-5 w-5 rounded-full border-2 border-indigo-500 border-t-transparent mb-2"></span>
-                    <span className="text-xs font-medium">Connecting voice stream, please wait...</span>
+                    <span className="text-xs font-medium">Connecting voice stream...</span>
                   </div>
                 ) : (
                   visibleSteps.map((step) => {
@@ -457,7 +476,7 @@ export default function VideoCallPage() {
                     return (
                       <div
                         key={step.id}
-                        className={`flex flex-col max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm ${
+                        className={`flex flex-col max-w-[95%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm ${
                           isAgent 
                             ? 'bg-indigo-50 border border-indigo-100 text-indigo-900 self-start'
                             : isStore 
