@@ -10,8 +10,7 @@ type ScreenShareState = 'idle' | 'waiting_permission' | 'active' | 'analyzing' |
 type Message = {
   id: number;
   text: string;
-  sender: 'ai' | 'user' | 'tool';
-  toolLogs?: string[];
+  sender: 'ai' | 'user';
   liveProduct?: Product;
 };
 
@@ -68,63 +67,44 @@ export default function AIAssistantPanel() {
     setTranscriptPreview(null);
     setIsTyping(true);
 
-    // Initial tool log
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Date.now() + 1,
-        text: '',
-        sender: 'tool',
-        toolLogs: [`🔍 Searching Web for "${queryTerm}"...`]
-      }
-    ]);
-
     try {
-      // Fetch Live data!
+      // Simulate slight network delay for realism
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       const res = await fetch(`/api/search?q=${encodeURIComponent(queryTerm)}`);
       const data = await res.json();
       const product = data.products?.[0];
 
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastToolMsg = newMessages[newMessages.length - 1];
-        if (lastToolMsg.sender === 'tool' && lastToolMsg.toolLogs) {
-          lastToolMsg.toolLogs.push(`💰 Found live pricing for ${product?.name || queryTerm}`);
-          lastToolMsg.toolLogs.push('✅ Formatting recommendations');
-        }
-        return newMessages;
-      });
+      setIsTyping(false);
 
-      setTimeout(() => {
-        setIsTyping(false);
-        if (product) {
-          setMessages(prev => [
-            ...prev,
-            { 
-              id: Date.now() + 2, 
-              text: `I found an excellent live deal on the ${product.name} based on current web results. Should we start negotiating?`, 
-              sender: 'ai',
-              liveProduct: product
-            }
-          ]);
-        } else {
-          setMessages(prev => [
-            ...prev,
-            { 
-              id: Date.now() + 2, 
-              text: `I couldn't find any live web results for "${queryTerm}". Could you try another product?`, 
-              sender: 'ai' 
-            }
-          ]);
-        }
-      }, 1000);
-
+      if (product) {
+        const lowestPrice = Math.min(...product.stores.map((s: any) => s.price));
+        setMessages(prev => [
+          ...prev,
+          { 
+            id: Date.now() + 2, 
+            text: `I have analyzed the current market data for **${product.name}**. The best online listing is currently priced at ₹${lowestPrice.toLocaleString()}. Our AI engine can negotiate this down further by securing private vendor clearances. Would you like me to open a secure bargaining channel?`, 
+            sender: 'ai',
+            liveProduct: product
+          }
+        ]);
+      } else {
+        // Negative test case: no product found
+        setMessages(prev => [
+          ...prev,
+          { 
+            id: Date.now() + 2, 
+            text: `I couldn't find any verifiable retail listings for "${queryTerm}". Please ensure the product name is spelled correctly or try searching for a different brand or model.`, 
+            sender: 'ai' 
+          }
+        ]);
+      }
     } catch (error) {
       console.error(error);
       setIsTyping(false);
       setMessages(prev => [
         ...prev,
-        { id: Date.now() + 2, text: 'Sorry, I encountered an error searching the web.', sender: 'ai' }
+        { id: Date.now() + 2, text: 'I encountered a network timeout while communicating with our merchant APIs. Please try again in a moment.', sender: 'ai' }
       ]);
     }
   };
@@ -267,39 +247,25 @@ export default function AIAssistantPanel() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {msg.sender === 'tool' ? (
-                <div className="w-full max-w-[85%] bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 font-mono shadow-sm">
-                  <div className="flex items-center gap-1.5 mb-2 text-slate-700 font-semibold">
-                    <Activity className="w-3.5 h-3.5 text-indigo-500" />
-                    Tool Execution
-                  </div>
-                  <div className="space-y-1.5">
-                    {msg.toolLogs?.map((log, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="text-indigo-500 mt-0.5">{'>'}</span>
-                        <span>{log}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div className="flex flex-col gap-2 max-w-[85%]">
+                <div 
+                  className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    msg.sender === 'user' 
+                      ? 'bg-indigo-600 text-white rounded-br-sm shadow-sm' 
+                      : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'
+                  }`}
+                >
+                  {/* Handle basic markdown bolding if present */}
+                  {msg.text.split('**').map((part, i) => (
+                    i % 2 === 1 ? <strong key={i} className="text-slate-900 font-bold">{part}</strong> : part
+                  ))}
                 </div>
-              ) : (
-                <div className="flex flex-col gap-2 max-w-[85%]">
-                  <div 
-                    className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                      msg.sender === 'user' 
-                        ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' 
-                        : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'
-                    }`}
-                  >
-                    {msg.text}
+                {msg.liveProduct && (
+                  <div className="mt-1 w-[280px]">
+                    <ProductRecommendationCard product={msg.liveProduct} />
                   </div>
-                  {msg.liveProduct && (
-                    <div className="mt-1 w-[280px]">
-                      <ProductRecommendationCard product={msg.liveProduct} />
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
 
