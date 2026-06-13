@@ -51,8 +51,8 @@ export default function VoiceNegotiatorPage() {
   const activeProduct = MOCK_PRODUCTS.find(p => p.id === selectedProductId) || MOCK_PRODUCTS[0];
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [negotiationStep, transcript]);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [negotiationStep]);
 
   // Setup Web Speech API
   useEffect(() => {
