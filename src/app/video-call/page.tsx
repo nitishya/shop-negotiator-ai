@@ -40,6 +40,7 @@ export default function VoiceNegotiatorPage() {
   } = useApp();
 
   const [micActive, setMicActive] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
   const [transcript, setTranscript] = useState('');
   
@@ -73,10 +74,20 @@ export default function VoiceNegotiatorPage() {
         recognitionRef.current.onerror = (event: any) => {
           console.error("Speech recognition error", event.error);
           setMicActive(false);
+          setIsSpeaking(false);
+        };
+        
+        recognitionRef.current.onspeechstart = () => {
+          setIsSpeaking(true);
+        };
+
+        recognitionRef.current.onspeechend = () => {
+          setIsSpeaking(false);
         };
         
         recognitionRef.current.onend = () => {
           setMicActive(false);
+          setIsSpeaking(false);
         }
       }
     }
@@ -98,6 +109,7 @@ export default function VoiceNegotiatorPage() {
     if (micActive) {
       recognitionRef.current.stop();
       setMicActive(false);
+      setIsSpeaking(false);
     } else {
       setTranscript(''); // clear old transcript on fresh start
       recognitionRef.current.start();
@@ -110,7 +122,7 @@ export default function VoiceNegotiatorPage() {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
-    router.push('/');
+    router.push(`/compare?q=${encodeURIComponent(activeProduct.name.split(' (')[0])}`);
   };
 
   useEffect(() => {
@@ -247,13 +259,13 @@ export default function VoiceNegotiatorPage() {
                         : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    {micActive ? <Mic className="w-10 h-10 animate-pulse" /> : <MicOff className="w-10 h-10" />}
+                    {micActive ? <Mic className={`w-10 h-10 ${isSpeaking ? 'animate-pulse' : ''}`} /> : <MicOff className="w-10 h-10" />}
                   </button>
                   <span className={`mt-4 font-semibold text-sm ${micActive ? 'text-red-500' : 'text-slate-500'}`}>
-                    {micActive ? 'Your Mic is Live' : 'Mic is Muted'}
+                    {micActive ? (isSpeaking ? 'Capturing Voice...' : 'Mic is Live (Listening)') : 'Mic is Muted'}
                   </span>
                   
-                  {micActive && (
+                  {isSpeaking && (
                     <div className="absolute bottom-6 flex items-end gap-1.5 h-6">
                       <span className="wave-bar w-1 bg-red-400 rounded-full h-3 animate-soundwave"></span>
                       <span className="wave-bar w-1 bg-red-500 rounded-full h-6 animate-soundwave"></span>
