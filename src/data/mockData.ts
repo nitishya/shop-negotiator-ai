@@ -3,6 +3,7 @@ export interface ProductStore {
   price: number;
   originalPrice: number;
   deliveryDays: number;
+  deliveryTime?: number; // In minutes, for quick commerce
   rating: number;
   reviewsCount: number;
   inStock: boolean;

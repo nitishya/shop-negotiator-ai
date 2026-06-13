@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Bot, Github, Linkedin, Sparkles } from 'lucide-react';
+import { Bot, Sparkles } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -71,18 +71,16 @@ export default function Footer() {
               href="https://www.linkedin.com/in/nitishyadav866/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium"
             >
-              <Linkedin className="w-4 h-4" />
               <span>LinkedIn</span>
             </a>
             <a
               href="https://github.com/nitishya/shop-negotiator-ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors font-medium"
             >
-              <Github className="w-4 h-4" />
               <span>GitHub</span>
             </a>
           </div>
