@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, X, MessageSquare, Send, Sparkles, Search, Mic, MicOff, MonitorUp, Loader2, Activity, CheckCircle2, MonitorPlay } from 'lucide-react';
+import ProductRecommendationCard from './ProductRecommendationCard';
+import { MOCK_PRODUCTS } from '@/data/mockData';
 
 type ScreenShareState = 'idle' | 'waiting_permission' | 'active' | 'analyzing' | 'product_detected' | 'searching_platforms' | 'ready';
 
@@ -10,6 +12,7 @@ type Message = {
   text: string;
   sender: 'ai' | 'user' | 'tool';
   toolLogs?: string[];
+  productIds?: string[];
 };
 
 export default function AIAssistantPanel() {
@@ -81,8 +84,9 @@ export default function AIAssistantPanel() {
           ...prev,
           { 
             id: Date.now() + 2, 
-            text: 'I found some excellent deals based on current market trends. Would you like me to start negotiating with the retailers?', 
-            sender: 'ai' 
+            text: 'I found an excellent deal on the Sony WH-1000XM5 headphones based on current market trends. Should we start negotiating?', 
+            sender: 'ai',
+            productIds: ['sony-wh1000xm5']
           }
         ]);
       }, 2000);
@@ -245,14 +249,28 @@ export default function AIAssistantPanel() {
                   </div>
                 </div>
               ) : (
-                <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                    msg.sender === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-br-sm' 
-                      : 'bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-bl-sm shadow-sm'
-                  }`}
-                >
-                  {msg.text}
+                <div className="flex flex-col gap-2 max-w-[85%]">
+                  <div 
+                    className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      msg.sender === 'user' 
+                        ? 'bg-indigo-600 text-white rounded-br-sm' 
+                        : 'bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-bl-sm shadow-sm'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                  {msg.productIds && msg.productIds.length > 0 && (
+                    <div className="mt-1 w-full flex flex-col gap-2">
+                      {msg.productIds.map(id => {
+                        const product = MOCK_PRODUCTS.find(p => p.id === id);
+                        return product ? (
+                          <div key={id} className="w-[280px]">
+                            <ProductRecommendationCard product={product} />
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
