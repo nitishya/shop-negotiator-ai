@@ -39,7 +39,7 @@ external:
     api-key: ${CROMA_API_KEY:mock-croma-key}
   sarvam:
     base-url: ${SARVAM_API_URL:https://api.sarvam.ai}
-    api-key: ${SARVAM_API_KEY:mock-sarvam-key}
+    api-key: ${SARVAM_API_KEY:sk_ix46crql_1662KqAOa9CqZoRTfLwFJwTV}
 
 # Resilience4j Configuration
 resilience4j:
